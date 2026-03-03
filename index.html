@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مفروشات أسيد Pro</title>
+    <style>
+        :root {
+            --primary: #800020; --primary-dark: #4a0012; --gold: #d4af37;
+            --bg: #f4f4f7; --card: #ffffff; --text: #2d3436;
+            --green: #27ae60; --red: #d63031; --shadow: 0 10px 25px rgba(0,0,0,0.08);
+            --radius: 20px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; padding: 25px 20px; text-align: center;
+            border-bottom: 3px solid var(--gold); border-bottom-left-radius: 25px; border-bottom-right-radius: 25px;
+            box-shadow: var(--shadow); position: sticky; top: 0; z-index: 1000;
+        }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .caisse-card {
+            background: linear-gradient(135deg, #1e272e, #000); color: white;
+            padding: 25px; border-radius: var(--radius); margin-bottom: 20px;
+            text-align: center; border: 1px solid var(--gold);
+        }
+        .caisse-amount { font-size: 2.5rem; font-weight: 900; color: var(--gold); margin: 5px 0; }
+        .card {
+            background: var(--card); border-radius: var(--radius); padding: 18px;
+            margin-bottom: 15px; box-shadow: var(--shadow); border-right: 5px solid var(--primary);
+        }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 14px;
+            border-radius: 12px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; display: flex; justify-content: space-around;
+            padding: 12px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 2000;
+        }
+        .nav-item { text-align: center; color: #b2bec3; flex: 1; font-size: 0.7rem; font-weight: bold; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item i { display: block; font-size: 1.4rem; margin-bottom: 3px; font-style: normal; }
+        .search-bar { width: 100%; padding: 12px 20px; border-radius: 15px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .modal {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: flex-end;
+        }
+        .modal-content {
+            background: white; width: 100%; max-width: 500px; padding: 25px;
+            border-top-left-radius: 30px; border-top-right-radius: 30px; animation: slideUp 0.3s;
+        }
+        @keyframes slideUp { from {transform: translateY(100%)} to {transform: translateY(0)} }
+        input, select { width: 100%; padding: 14px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; background: #f9f9f9; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+    </style>
+</head>
+<body>
+
+<header><h1>مفروشات أسيد</h1></header>
+
+<div class="container">
+    <section id="page-home" class="page active">
+        <div class="caisse-card">
+            <small>المبلغ المتوفر في الصندوق (Caisse)</small>
+            <div id="caisse-total" class="caisse-amount">0.00</div>
+            <span>دينار جزائري</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="openSaleModal()">🛒 بيع قطعة</button>
+            <button class="btn btn-outline" onclick="openExpenseModal()">💸 مصروف</button>
+        </div>
+        <h3 style="color: var(--primary)">أحدث الحركات</h3>
+        <div id="caisse-logs"></div>
+    </section>
+
+    <section id="page-customers" class="page">
+        <input type="text" class="search-bar" placeholder="ابحث عن زبون..." oninput="renderCustomers(this.value)">
+        <button class="btn" style="width: 100%; margin-bottom: 20px;" onclick="openModal('modal-customer')">➕ إضافة زبون</button>
+        <div id="list-customers"></div>
+    </section>
+
+    <section id="page-stock" class="page">
+        <input type="text" class="search-bar" placeholder="ابحث في المخزن..." oninput="renderStock(this.value)">
+        <button class="btn" style="width: 100%; margin-bottom: 20px;" onclick="openModal('modal-stock')">📦 إضافة سلعة</button>
+        <div id="list-stock"></div>
+    </section>
+
+    <section id="page-reports" class="page">
+        <div class="card" style="border-right-color: var(--gold)">
+            <h3>📊 تقرير يوم الخميس</h3>
+            <div id="thursday-report"></div>
+        </div>
+        <button class="btn btn-outline" style="width:100%; margin-bottom:10px" onclick="exportData()">⬇️ نسخ احتياطي</button>
+        <button class="btn btn-outline" style="width:100%" onclick="document.getElementById('importFile').click()">⬆️ استيراد بيانات</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+    </section>
+</div>
+
+<div class="nav">
+    <div class="nav-item active" onclick="showPage('home', this)"><i>💰</i>الصندوق</div>
+    <div class="nav-item" onclick="showPage('customers', this)"><i>👥</i>الزبائن</div>
+    <div class="nav-item" onclick="showPage('stock', this)"><i>📦</i>المخزن</div>
+    <div class="nav-item" onclick="showPage('reports', this)"><i>📈</i>التقارير</div>
+</div>
+
+<!-- Modals -->
+<div id="modal-stock" class="modal"><div class="modal-content">
+    <h3>📦 إضافة سلعة</h3>
+    <input type="text" id="item-name" placeholder="اسم السلعة">
+    <input type="number" id="item-qty" placeholder="الكمية">
+    <button class="btn" onclick="addItem()">حفظ</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('modal-stock')">إلغاء</button>
+</div></div>
+
+<div id="modal-customer" class="modal"><div class="modal-content">
+    <h3>👤 زبون جديد</h3>
+    <input type="text" id="cust-name" placeholder="اسم الزبون">
+    <input type="tel" id="cust-phone" placeholder="رقم الهاتف">
+    <button class="btn" onclick="addCustomer()">حفظ</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('modal-customer')">إلغاء</button>
+</div></div>
+
+<div id="modal-sale" class="modal"><div class="modal-content">
+    <h3>🛒 عملية بيع</h3>
+    <select id="sale-item-id"></select>
+    <select id="sale-cust-id"></select>
+    <input type="number" id="sale-price" placeholder="سعر البيع">
+    <input type="number" id="sale-paid" placeholder="المبلغ المدفوع">
+    <button class="btn" onclick="executeSale()">تأكيد</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('modal-sale')">إلغاء</button>
+</div></div>
+
+<div id="modal-expense" class="modal"><div class="modal-content">
+    <h3>📤 مصروف</h3>
+    <input type="text" id="exp-reason" placeholder="السبب">
+    <input type="number" id="exp-amount" placeholder="المبلغ">
+    <button class="btn" style="background:var(--red)" onclick="executeExpense()">خصم</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal('modal-expense')">إلغاء</button>
+</div></div>
+
+<script>
+    let db;
+    const request = indexedDB.open("AsidFurnitureProFinal", 1);
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        db.createObjectStore("stock", { keyPath: "id", autoIncrement: true });
+        db.createObjectStore("customers", { keyPath: "id", autoIncrement: true });
+        db.createObjectStore("caisse", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = (e) => { db = e.target.result; refreshAll(); };
+
+    function refreshAll() { renderCaisse(); renderStock(); renderCustomers(); }
+    function showPage(p, el) {
+        document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+        document.getElementById('page-'+p).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        if(p === 'reports') generateThursdayReport();
+    }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function addItem() {
+        const name = document.getElementById('item-name').value;
+        const qty = parseInt(document.getElementById('item-qty').value);
+        if(!name || isNaN(qty)) return alert("أكمل البيانات");
+        const tx = db.transaction("stock", "readwrite");
+        tx.objectStore("stock").add({ name, qty });
+        tx.oncomplete = () => { closeModal('modal-stock'); renderStock(); };
+    }
+
+    function renderStock(q = "") {
+        const list = document.getElementById('list-stock'); list.innerHTML = '';
+        db.transaction("stock").objectStore("stock").getAll().onsuccess = (e) => {
+            e.target.result.forEach(i => {
+                if(i.name.includes(q)) list.innerHTML += `<div class="card"><h3>${i.name}</h3><p>الكمية: <b>${i.qty}</b></p></div>`;
+            });
+        };
+    }
+
+    function addCustomer() {
+        const name = document.getElementById('cust-name').value;
+        if(!name) return;
+        db.transaction("customers", "readwrite").objectStore("customers").add({ name, phone: document.getElementById('cust-phone').value, debt: 0 });
+        closeModal('modal-customer'); renderCustomers();
+    }
+
+    function renderCustomers(q = "") {
+        const list = document.getElementById('list-customers'); list.innerHTML = '';
+        db.transaction("customers").objectStore("customers").getAll().onsuccess = (e) => {
+            e.target.result.forEach(c => {
+                if(c.name.includes(q)) list.innerHTML += `<div class="card"><h3>${c.name}</h3><p>الدين: <b style="color:red">${c.debt} دج</b></p></div>`;
+            });
+        };
+    }
+
+    function renderCaisse() {
+        const logs = document.getElementById('caisse-logs'); logs.innerHTML = ''; let total = 0;
+        db.transaction("caisse").objectStore("caisse").getAll().onsuccess = (e) => {
+            e.target.result.reverse().forEach((l, i) => {
+                if(l.type === 'in') total += l.amount; else total -= l.amount;
+                if(i < 5) logs.innerHTML += `<div class="card" style="border-right-color:${l.type==='in'?'green':'red'}"><b>${l.reason}</b>: ${l.amount}</div>`;
+            });
+            document.getElementById('caisse-total').innerText = total.toLocaleString();
+        };
+    }
+
+    function openSaleModal() {
+        const is = document.getElementById('sale-item-id'); is.innerHTML = '';
+        const cs = document.getElementById('sale-cust-id'); cs.innerHTML = '<option value="0">كاش</option>';
+        db.transaction("stock").objectStore("stock").getAll().onsuccess = (e) => {
+            e.target.result.forEach(i => is.innerHTML += `<option value="${i.id}">${i.name} (${i.qty})</option>`);
+        };
+        db.transaction("customers").objectStore("customers").getAll().onsuccess = (e) => {
+            e.target.result.forEach(c => cs.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+        };
+        openModal('modal-sale');
+    }
+
+    function executeSale() {
+        const itemId = parseInt(document.getElementById('sale-item-id').value);
+        const custId = parseInt(document.getElementById('sale-cust-id').value);
+        const price = parseFloat(document.getElementById('sale-price').value);
+        const paid = parseFloat(document.getElementById('sale-paid').value) || 0;
+        if(!itemId || isNaN(price)) return;
+        const tx = db.transaction(["stock", "customers", "caisse"], "readwrite");
+        tx.objectStore("stock").get(itemId).onsuccess = (e) => {
+            let i = e.target.result; i.qty--; tx.objectStore("stock").put(i);
+        };
+        if(custId !== 0) {
+            tx.objectStore("customers").get(custId).onsuccess = (e) => {
+                let c = e.target.result; c.debt += (price - paid); tx.objectStore("customers").put(c);
+            };
+        }
+        if(paid > 0) tx.objectStore("caisse").add({ type: 'in', amount: paid, reason: "بيع", date: new Date() });
+        tx.oncomplete = () => { closeModal('modal-sale'); refreshAll(); };
+    }
+
+    function executeExpense() {
+        const r = document.getElementById('exp-reason').value;
+        const a = parseFloat(document.getElementById('exp-amount').value);
+        if(!r || !a) return;
+        const tx = db.transaction("caisse", "readwrite");
+        tx.objectStore("caisse").add({ type: 'out', amount: a, reason: r, date: new Date() });
+        tx.oncomplete = () => { closeModal('modal-expense'); renderCaisse(); };
+    }
+
+    function generateThursdayReport() {
+        let inc = 0, exp = 0; let lastT = new Date(); lastT.setDate(lastT.getDate() - (lastT.getDay() + 3) % 7); lastT.setHours(0,0,0,0);
+        db.transaction("caisse").objectStore("caisse").getAll().onsuccess = (e) => {
+            e.target.result.forEach(l => {
+                if(new Date(l.date) >= lastT) { if(l.type === 'in') inc += l.amount; else exp += l.amount; }
+            });
+            document.getElementById('thursday-report').innerHTML = `<h4>المدخول: ${inc}</h4><h4>المصاريف: ${exp}</h4><hr><h3>الصافي: ${inc-exp}</h3>`;
+        };
+    }
+
+    function exportData() {
+        let b = {}; let c = 0; ["stock", "customers", "caisse"].forEach(s => {
+            db.transaction(s).objectStore(s).getAll().onsuccess = (e) => {
+                b[s] = e.target.result; c++;
+                if(c === 3) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(new Blob([JSON.stringify(b)], {type: "application/json"}));
+                    a.download = "Asid_Backup.json"; a.click();
+                }
+            };
+        });
+    }
+
+    function importData(ev) {
+        const fr = new FileReader(); fr.onload = (e) => {
+            const d = JSON.parse(e.target.result);
+            const tx = db.transaction(["stock", "customers", "caisse"], "readwrite");
+            Object.keys(d).forEach(s => { tx.objectStore(s).clear(); d[s].forEach(i => tx.objectStore(s).add(i)); });
+            tx.oncomplete = () => location.reload();
+        }; fr.readAsText(ev.target.files[0]);
+    }
+</script>
+</body>
+</html>
